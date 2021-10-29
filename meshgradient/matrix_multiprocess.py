@@ -8,11 +8,12 @@ import psutil
 import ray
 
 import numpy as np
-import tensorflow as tf
+import torch
 import progressbar
 import meshio
 
 from .utils import get_cycle, get_area_from_points, get_triangles
+from .backend import Tensor, SparseTensor, MatMul
 
 num_cpus = psutil.cpu_count(logical=False)
 ray.init(num_cpus=num_cpus)
@@ -22,8 +23,8 @@ class PointProcessCON(object):
     def __init__(self,mesh,triangles):
         self.mesh = mesh
         self.triangles = triangles 
-        self.tf_indices = []
-        self.tf_values = []
+        self.backend_indices = []
+        self.backend_values = []
     
     def process(self,indx_point):
         indx_triangles: np.ndarray = np.argwhere(self.triangles == indx_point)[:, 0]
@@ -33,20 +34,20 @@ class PointProcessCON(object):
         total_area: int = sum(areas)
 
         for i, indx_triangle in enumerate(indx_triangles):
-            self.tf_indices.append([indx_point, indx_triangle])
-            self.tf_values.append(areas[i] / total_area)
+            self.backend_indices.append([indx_point, indx_triangle])
+            self.backend_values.append(areas[i] / total_area)
             
     def get_tensor_info(self):
-        return [self.tf_indices, self.tf_values]
+        return [self.backend_indices, self.backend_values]
 
 def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     points: np.ndarray = mesh.points
     triangles: np.ndarray = get_triangles(mesh)
 
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (len(points), len(triangles))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (len(points), len(triangles))
     # for indx_point in progressbar.progressbar(range(len(points))):
     indx_point: int
     i: int
@@ -57,21 +58,21 @@ def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
         
     results = ray.get([actor.get_tensor_info.remote() for actor in streaming_actors])
     results = np.array(results)
-    tf_indices = results[:,0][0]
-    tf_values = results[:,1][0]
-    Sp_tf_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    backend_indices = results[:,0][0]
+    backend_values = results[:,1][0]
+    Sp_backend_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_CON_matrix
+    return Sp_backend_CON_matrix
 
 @ray.remote 
 class TriangleProcessPCE(object):
     def __init__(self,mesh):
         self.mesh = mesh
         self.rot = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])
-        self.tf_indices = []
-        self.tf_values = []
+        self.backend_indices = []
+        self.backend_values = []
     
     def process(self,indx,curr_triangle):
         area = get_area_from_points(self.mesh, curr_triangle) * 2
@@ -95,11 +96,11 @@ class TriangleProcessPCE(object):
                 u_90 * np.linalg.norm(u) + v_90 * np.linalg.norm(v)
             ) / area
             for k in range(3):
-                self.tf_indices.append([indx * 3 + k, curr])
-                self.tf_values.append(vert_contr[k])
+                self.backend_indices.append([indx * 3 + k, curr])
+                self.backend_values.append(vert_contr[k])
             
     def get_tensor_info(self):
-        return [self.tf_indices, self.tf_values]
+        return [self.backend_indices, self.backend_values]
 
 def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     """Build Per Cell Average matrix to compute gradient on cells.
@@ -113,10 +114,10 @@ def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     Raises:
     """
     triangles: np.ndarray = get_triangles(mesh)
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (3 * len(triangles), len(mesh.points))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (3 * len(triangles), len(mesh.points))
 
     i: int
     curr_triangle: np.ndarray
@@ -127,22 +128,22 @@ def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
         
     results = ray.get([actor.get_tensor_info.remote() for actor in streaming_actors])
     results = np.array(results)
-    tf_indices = results[:,0][0]
-    tf_values = results[:,1][0]
+    backend_indices = results[:,0][0]
+    backend_values = results[:,1][0]
     
-    Sp_tf_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    Sp_backend_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_PCE_matrix
+    return Sp_backend_PCE_matrix
 
 @ray.remote 
 class NodeProcessAGS(object):
     def __init__(self,mesh):
         self.mesh = mesh
         self.rot = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])
-        self.tf_indices = []
-        self.tf_values = []
+        self.backend_indices = []
+        self.backend_values = []
     
     def process(self,indx_node, node):
         triangles: List[Tuple[int]]
@@ -179,11 +180,11 @@ class NodeProcessAGS(object):
 
             for col, value in vert_contr:
                 for i in range(3):
-                    self.tf_indices.append([indx_node * 3 + i, col])
-                    self.tf_values.append(value[i] / area)
+                    self.backend_indices.append([indx_node * 3 + i, col])
+                    self.backend_values.append(value[i] / area)
             
     def get_tensor_info(self):
-        return [self.tf_indices, self.tf_values]
+        return [self.backend_indices, self.backend_values]
 
 def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     """Build Average Gradient Star matrix to compute gradient on cells.
@@ -198,10 +199,10 @@ def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     Raises:
     """
 
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (3 * len(mesh.points), len(mesh.points))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (3 * len(mesh.points), len(mesh.points))
     indx_node: int
     node: np.ndarray
     
@@ -211,11 +212,11 @@ def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
         
     results = ray.get([actor.get_tensor_info.remote() for actor in streaming_actors])
     results = np.array(results)
-    tf_indices = results[:,0][0]
-    tf_values = results[:,1][0]
+    backend_indices = results[:,0][0]
+    backend_values = results[:,1][0]
 
-    Sp_tf_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    Sp_backend_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_AGS_matrix
+    return Sp_backend_AGS_matrix

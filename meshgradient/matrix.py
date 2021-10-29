@@ -5,7 +5,7 @@ from __future__ import print_function
 from typing import Dict, Tuple, Optional, List, Any
 
 import numpy as np
-import tensorflow as tf
+import torch
 import progressbar
 import meshio
 
@@ -23,16 +23,16 @@ def build_CON_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     Arguments:
         mesh: a meshio object
     Returns:
-        Sp_tf_CON_matrix: A sparse tensor that can be used to compute the gradient of a mesh.
+        Sp_backend_CON_matrix: A sparse tensor that can be used to compute the gradient of a mesh.
     Raises:
     """
     points: np.ndarray = mesh.points
     triangles: np.ndarray = get_triangles(mesh)
 
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (len(points), len(triangles))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (len(points), len(triangles))
     # for indx_point in progressbar.progressbar(range(len(points))):
     indx_point: int
     i: int
@@ -44,14 +44,14 @@ def build_CON_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
         total_area: int = sum(areas)
 
         for i, indx_triangle in enumerate(indx_triangles):
-            tf_indices.append([indx_point, indx_triangle])
-            tf_values.append(areas[i] / total_area)
+            backend_indices.append([indx_point, indx_triangle])
+            backend_values.append(areas[i] / total_area)
 
-    Sp_tf_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    Sp_backend_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_CON_matrix
+    return Sp_backend_CON_matrix
 
 
 def build_PCE_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
@@ -66,10 +66,10 @@ def build_PCE_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     Raises:
     """
     triangles: np.ndarray = get_triangles(mesh)
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (3 * len(triangles), len(mesh.points))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (3 * len(triangles), len(mesh.points))
 
     rot: np.ndarray = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])
 
@@ -105,14 +105,14 @@ def build_PCE_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
                 u_90 * np.linalg.norm(u) + v_90 * np.linalg.norm(v)
             ) / area
             for k in range(3):
-                tf_indices.append([i * 3 + k, curr])
-                tf_values.append(vert_contr[k])
+                backend_indices.append([i * 3 + k, curr])
+                backend_values.append(vert_contr[k])
 
-    Sp_tf_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    Sp_backend_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_PCE_matrix
+    return Sp_backend_PCE_matrix
 
 
 def build_AGS_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
@@ -128,10 +128,10 @@ def build_AGS_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     Raises:
     """
 
-    tf_indices: List
-    tf_values: List
-    tf_shape: Tuple[int]
-    tf_indices, tf_values, tf_shape = [], [], (3 * len(mesh.points), len(mesh.points))
+    backend_indices: List
+    backend_values: List
+    backend_shape: Tuple[int]
+    backend_indices, backend_values, backend_shape = [], [], (3 * len(mesh.points), len(mesh.points))
     rot: np.ndarray = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])
 
     prev: int
@@ -182,11 +182,11 @@ def build_AGS_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
 
             for col, value in vert_contr:
                 for i in range(3):
-                    tf_indices.append([indx_node * 3 + i, col])
-                    tf_values.append(value[i] / area)
+                    backend_indices.append([indx_node * 3 + i, col])
+                    backend_values.append(value[i] / area)
 
-    Sp_tf_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        tf_indices, tf.cast(tf_values, dtype=tf.float32), tf_shape
+    Sp_backend_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
+        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
     )
 
-    return Sp_tf_AGS_matrix
+    return Sp_backend_AGS_matrix

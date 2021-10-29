@@ -5,8 +5,9 @@ from __future__ import print_function
 from typing import Dict, Tuple, Optional, List, Any, Union
 
 import numpy as np
-import tensorflow as tf
+import torch
 
+from .backend import Tensor, SparseTensor, MatMul
 
 def compute_div_from_grad(
     grad: Union[tf.Tensor, np.ndarray]
@@ -68,19 +69,19 @@ def compute_gradient_per_points(
         The gradient field.
     Raises:
     """
-    Sp_AGS_tf: tf.sparse.SparseTensor
-    Sp_PCE_tf: tf.sparse.SparseTensor
-    Sp_CON_tf: tf.sparse.SparseTensor
-    (Sp_AGS_tf, Sp_PCE_tf, Sp_CON_tf) = gradient_matrices
+    Sp_AGS_backend: tf.sparse.SparseTensor
+    Sp_PCE_backend: tf.sparse.SparseTensor
+    Sp_CON_backend: tf.sparse.SparseTensor
+    (Sp_AGS_backend, Sp_PCE_backend, Sp_CON_backend) = gradient_matrices
 
-    tf_F: tf.Tensor = tf.cast(tf.expand_dims(F, axis=-1), tf.float32)
+    backend_F: tf.Tensor = tf.cast(tf.expand_dims(F, axis=-1), tf.float32)
     # Compute gradient on points
-    gp_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_AGS_tf, tf_F)
+    gp_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_AGS_backend, backend_F)
 
     # Compute gradient on boundaries
-    gc_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_PCE_tf, tf_F)
-    gc_F = tf.reshape(gc_F, (Sp_CON_tf.shape[1], 3))
-    gb_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_CON_tf, gc_F)
+    gc_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_PCE_backend, backend_F)
+    gc_F = tf.reshape(gc_F, (Sp_CON_backend.shape[1], 3))
+    gb_F: tf.Tensor = tf.sparse.sparse_dense_matmul(Sp_CON_backend, gc_F)
     gb_F = tf.reshape(gb_F, (gb_F.shape[0] * 3, 1))
 
     g_F: tf.Tensor
