@@ -1,17 +1,33 @@
 # MeshGradientPy
+
+Modification of [DonsetPG/MeshGradientPy](https://github.com/DonsetPG/MeshGradientPy) to use [PyTorch](https://pytorch.org/) instead of [TensorFlow](https://www.tensorflow.org/).
+
+---------------------------------------
+
+- [1. What it does](#1-what-it-does)
+- [2. Libraries](#2-libraries)
+- [3. Example](#3-example)
+  - [3.1. Multiprocessing](#31-multiprocessing)
+- [4. Background](#4-background)
+  - [4.1. PCE](#41-pce)
+  - [4.2. AGS](#42-ags)
+
+---------------------------------------
+
+## 1. What it does
 Compute gradients on mesh and unstructured data objects.
 
 This repository aims to fill a gap: no native Python code was available to compute a particular field gradient on a mesh. Some implementations may exist for a structured grid, but this is the first time gradient can be calculated on unstructured mesh (without external libraries such as Paraview or Pyvista).
 
 While Pyvista does provide this functionality, it gets impossible to make it work with other libraries, such as Machine Learning framework. Therefore, we built this library using Tensorflow (which can be replaced with other Deep Learning framework), allowing one to compute gradient on a mesh while performing gradient descent.
 
-# Libraries 
+## 2. Libraries 
 
-We used numpy and tensorflow for the computation part and meshio to read/write mesh.
+We used numpy and PyTorch (TensorFlow in the [original repo](https://github.com/DonsetPG/MeshGradientPy)) for the computation part and meshio to read/write mesh.
 
 We also developed a multiprocessing version of our functions based on the library Ray. This gives full support to tailored computing power even on large clusters.
 
-# Example 
+## 3. Example 
 
 We can read a mesh using meshio: 
 ```python3
@@ -25,11 +41,11 @@ matrix = build_AGS_matrix(mesh)
 
 More informations can be found in this [notebook](https://github.com/DonsetPG/MeshGradientPy/blob/main/Example.ipynb).
 
-### Multiprocessing
+### 3.1. Multiprocessing
 
 Each matrix can also be computed in a multi processed fashion using the '_multiprocessing' function, such as ``` build_AGS_matrix_multiprocess```. 
 
-# Background 
+## 4. Background 
 
 We use three different methods to compute the gradient of a field:
 * PCE (Per-Cell Linear Estimation)
@@ -42,7 +58,7 @@ We based our implementation on the one provided by the authors of the paper [Gra
 
 These three methods were built for triangle cells. Any other sort of cells won't be considered. 
 
-### PCE 
+### 4.1. PCE 
 
 This method estimates a constant gradient inside each cell. First, we define a linear interpolation at any point <a href="https://www.codecogs.com/eqnedit.php?latex=p" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p" title="p" /></a> in a cell of a function <a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a> with: 
 
@@ -56,7 +72,7 @@ With this estimation, for a triangle with 3 vertices, we have:
 
 where <a href="https://www.codecogs.com/eqnedit.php?latex=A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?A" title="A" /></a> is the area of the triangle.
 
-### AGS
+### 4.2. AGS
 
 Given a node, we can use the PCE method to compute a gradient in each cell of the start of the node <a href="https://www.codecogs.com/eqnedit.php?latex=v" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v" title="v" /></a>, thus having:
 
