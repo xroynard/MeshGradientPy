@@ -1,6 +1,7 @@
 # MeshGradientPy
 
-Modification of [DonsetPG/MeshGradientPy](https://github.com/DonsetPG/MeshGradientPy) to use [PyTorch](https://pytorch.org/) instead of [TensorFlow](https://www.tensorflow.org/).
+(Status: In Progress)
+Modification of [DonsetPG/MeshGradientPy](https://github.com/DonsetPG/MeshGradientPy) to use [PyTorch](https://pytorch.org/) instead of [TensorFlow](https://www.tensorflow.org/). 
 
 ---------------------------------------
 
