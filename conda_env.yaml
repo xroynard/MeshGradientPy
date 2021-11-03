@@ -1,0 +1,22 @@
+name: myenv
+
+channels:
+  - pytorch
+  - conda-forge
+
+dependencies:
+  - pip=20.2
+  - cudatoolkit
+  - pytorch
+  - torchvision
+  - numpy
+  - scikit-image
+  - matplotlib
+  - scipy
+  - meshio
+  - pyvista
+  - progressbar
+  - ipykernel
+  - ipyvtklink
+  - jupyterlab
+  - notebook
