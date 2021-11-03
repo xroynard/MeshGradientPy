@@ -28,6 +28,11 @@ We used numpy and PyTorch (TensorFlow in the [original repo](https://github.com/
 
 We also developed a multiprocessing version of our functions based on the library Ray. This gives full support to tailored computing power even on large clusters.
 
+You can install a working conda env:
+```
+conda env create -f conda_env.yaml
+```
+
 ## 3. Example 
 
 We can read a mesh using meshio: 
@@ -40,11 +45,11 @@ from meshgradient.matrix import build_AGS_matrix
 matrix = build_AGS_matrix(mesh)
 ```
 
-More informations can be found in this [notebook](https://github.com/DonsetPG/MeshGradientPy/blob/main/Example.ipynb).
+More informations can be found in this [notebook](Example.ipynb).
 
 ### 3.1. Multiprocessing
 
-Each matrix can also be computed in a multi processed fashion using the '_multiprocessing' function, such as ``` build_AGS_matrix_multiprocess```. 
+Each matrix can also be computed in a multi processed fashion using the `_multiprocessing` function, such as `build_AGS_matrix_multiprocess`. 
 
 ## 4. Background 
 
@@ -61,20 +66,27 @@ These three methods were built for triangle cells. Any other sort of cells won't
 
 ### 4.1. PCE 
 
-This method estimates a constant gradient inside each cell. First, we define a linear interpolation at any point <a href="https://www.codecogs.com/eqnedit.php?latex=p" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p" title="p" /></a> in a cell of a function <a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a> with: 
+This method estimates a constant gradient inside each cell. First, we define a linear interpolation at any point $p$ in a cell of a function $f$ with: 
 
-<a href="https://www.codecogs.com/eqnedit.php?latex=f_{\sigma}(p)&space;=&space;\sum&space;_{v_{i}&space;\in&space;\sigma}&space;\lambda&space;_i&space;f_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f_{\sigma}(p)&space;=&space;\sum&space;_{v_{i}&space;\in&space;\sigma}&space;\lambda&space;_i&space;f_i" title="f_{\sigma}(p) = \sum _{v_{i} \in \sigma} \lambda _i f_i" /></a>
+$$
+f_\sigma(p) = \sum_{v_i \in \sigma} \lambda_i f_i
+$$
 
-where <a href="https://www.codecogs.com/eqnedit.php?latex=v_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v_i" title="v_i" /></a> are the vertices of the cell and <a href="https://www.codecogs.com/eqnedit.php?latex=\lambda_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\lambda_i" title="\lambda_i" /></a> the barycentric coordinates of <a href="https://www.codecogs.com/eqnedit.php?latex=p" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p" title="p" /></a> wrt. the vertices. 
+where $v_i$ are the vertices of the cell and $\lambda_i$ the barycentric coordinates of $p$ wrt. the vertices. 
 
-With this estimation, for a triangle with 3 vertices, we have:
+With this estimation, for a triangle with 3 vertices $v_i$, $v_j$ and $v_k$, we have:
 
-<a href="https://www.codecogs.com/eqnedit.php?latex=\nabla&space;f_t&space;=&space;(f_j&space;-&space;f_i)&space;\frac{(v_i&space;-&space;v_k)^{\bot}}{2A}&space;&plus;&space;(f_k&space;-&space;f_i)&space;\frac{(v_j&space;-&space;v_i)^{\bot}}{2A}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\nabla&space;f_t&space;=&space;(f_j&space;-&space;f_i)&space;\frac{(v_i&space;-&space;v_k)^{\bot}}{2A}&space;&plus;&space;(f_k&space;-&space;f_i)&space;\frac{(v_j&space;-&space;v_i)^{\bot}}{2A}" title="\nabla f_t = (f_j - f_i) \frac{(v_i - v_k)^{\bot}}{2A} + (f_k - f_i) \frac{(v_j - v_i)^{\bot}}{2A}" /></a>
+$$
+\nabla f_t = (f_j - f_i) \frac{(v_i - v_k)^\bot}{2A} + (f_k - f_i) \frac{(v_j - v_i)^\bot}{2A}
+$$
 
-where <a href="https://www.codecogs.com/eqnedit.php?latex=A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?A" title="A" /></a> is the area of the triangle.
+
+where $A$ is the area of the triangle.
 
 ### 4.2. AGS
 
-Given a node, we can use the PCE method to compute a gradient in each cell of the start of the node <a href="https://www.codecogs.com/eqnedit.php?latex=v" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v" title="v" /></a>, thus having:
+Given a node, we can use the PCE method to compute a gradient in each cell $\sigma$ containing the node $v$, thus having:
 
-<a href="https://www.codecogs.com/eqnedit.php?latex=\nabla&space;f_v&space;=&space;\frac{1}{\sum&space;_{\sigma&space;\in&space;\mathcal{N}(v)}A_\sigma}&space;\sum&space;A_\sigma&space;\nabla&space;f_\sigma" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\nabla&space;f_v&space;=&space;\frac{1}{\sum&space;_{\sigma&space;\in&space;\mathcal{N}(v)}A_\sigma}&space;\sum&space;A_\sigma&space;\nabla&space;f_\sigma" title="\nabla f_v = \frac{1}{\sum _{\sigma \in \mathcal{N}(v)}A_\sigma} \sum A_\sigma \nabla f_\sigma" /></a>
+$$
+\nabla f_v = \frac{1}{\sum_{\sigma \in \mathcal{N}(v)} A_\sigma} \sum_{\sigma \in \mathcal{N}(v)} A_\sigma \nabla f_\sigma
+$$
