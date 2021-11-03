@@ -5,14 +5,16 @@ from __future__ import print_function
 from typing import Dict, Tuple, Optional, List, Any
 
 import numpy as np
-import torch
 import progressbar
 import meshio
+
+# PyTorch or Tensorflow
+from .backend import SparseTensor, cast, float32
 
 from .utils import get_cycle, get_area_from_points, get_triangles
 
 
-def build_CON_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_CON_matrix(mesh: meshio.Mesh) -> SparseTensor:
     """Build connectivity matrix to compute gradient on boundaries.
 
     A[i,j] = area[j] / total_area[i]
@@ -47,14 +49,14 @@ def build_CON_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
             backend_indices.append([indx_point, indx_triangle])
             backend_values.append(areas[i] / total_area)
 
-    Sp_backend_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_CON_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_CON_matrix
 
 
-def build_PCE_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_PCE_matrix(mesh: meshio.Mesh) -> SparseTensor:
     """Build Per Cell Average matrix to compute gradient on cells.
 
     shape = (3 * #cells, #points)
@@ -108,14 +110,14 @@ def build_PCE_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
                 backend_indices.append([i * 3 + k, curr])
                 backend_values.append(vert_contr[k])
 
-    Sp_backend_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_PCE_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_PCE_matrix
 
 
-def build_AGS_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_AGS_matrix(mesh: meshio.Mesh) -> SparseTensor:
     """Build Average Gradient Star matrix to compute gradient on cells.
 
     shape = (3 * #vertex, #vertex)
@@ -185,8 +187,8 @@ def build_AGS_matrix(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
                     backend_indices.append([indx_node * 3 + i, col])
                     backend_values.append(value[i] / area)
 
-    Sp_backend_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_AGS_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_AGS_matrix

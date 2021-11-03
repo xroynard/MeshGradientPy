@@ -8,12 +8,13 @@ import psutil
 import ray
 
 import numpy as np
-import torch
 import progressbar
 import meshio
 
+# PyTorch or Tensorflow
+from .backend import SparseTensor, cast, float32
+
 from .utils import get_cycle, get_area_from_points, get_triangles
-from .backend import Tensor, SparseTensor, MatMul
 
 num_cpus = psutil.cpu_count(logical=False)
 ray.init(num_cpus=num_cpus)
@@ -40,7 +41,7 @@ class PointProcessCON(object):
     def get_tensor_info(self):
         return [self.backend_indices, self.backend_values]
 
-def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     points: np.ndarray = mesh.points
     triangles: np.ndarray = get_triangles(mesh)
 
@@ -60,8 +61,8 @@ def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     results = np.array(results)
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
-    Sp_backend_CON_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_CON_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_CON_matrix
@@ -102,7 +103,7 @@ class TriangleProcessPCE(object):
     def get_tensor_info(self):
         return [self.backend_indices, self.backend_values]
 
-def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     """Build Per Cell Average matrix to compute gradient on cells.
 
     shape = (3 * #cells, #points)
@@ -131,8 +132,8 @@ def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
     
-    Sp_backend_PCE_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_PCE_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_PCE_matrix
@@ -186,7 +187,7 @@ class NodeProcessAGS(object):
     def get_tensor_info(self):
         return [self.backend_indices, self.backend_values]
 
-def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
+def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     """Build Average Gradient Star matrix to compute gradient on cells.
 
     shape = (3 * #vertex, #vertex)
@@ -215,8 +216,8 @@ def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> tf.sparse.SparseTensor:
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
 
-    Sp_backend_AGS_matrix: tf.sparse.SparseTensor = tf.sparse.SparseTensor(
-        backend_indices, tf.cast(backend_values, dtype=tf.float32), backend_shape
+    Sp_backend_AGS_matrix: SparseTensor = SparseTensor(
+        backend_indices, cast(backend_values, dtype=float32), backend_shape
     )
 
     return Sp_backend_AGS_matrix
