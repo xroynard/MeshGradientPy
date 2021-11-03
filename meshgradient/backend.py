@@ -1,7 +1,7 @@
 
 
-backend = "tensorflow"
-#backend = "torch"
+#backend = "tensorflow"
+backend = "torch"
 
 if backend == "tensorflow":
     import tensorflow as tf
@@ -24,11 +24,14 @@ if backend == "tensorflow":
 
 elif backend == "torch":
     import torch
+    import numpy as np
 
     # types
     Tensor = torch.Tensor
-    SparseTensor = torch.Tensor # TODO: make a class for SparseTensor ?
+    SparseTensor = torch.sparse.Tensor # TODO: make a class for SparseTensor ?
     float32 = torch.float32
+    
+    sparse_coo_tensor = torch.sparse_coo_tensor
 
     # functions
     matmul = torch.matmul
@@ -41,7 +44,20 @@ elif backend == "torch":
         return torch.repeat_interleave(input, repeats, dim=axis)
     
     def cast(x, dtype):
-        return x.to(dtype=dtype)
+        if isinstance(x, np.ndarray):
+            return cast(torch.from_numpy(x), dtype)
+        if isinstance(x, list):
+            try:
+                x = np.array(x)
+                x = torch.from_numpy(x)
+            except TypeError:
+                return [cast(item, dtype) for item in x]
+            
+            return cast(x, dtype)
+        elif isinstance(x, dict):
+            return {key:cast(x[key], dtype) for key in x}
+        else:
+            return x.to(dtype=dtype)
 
     def expand_dims(x, axis):
         return torch.unsqueeze(x, dim=axis)
