@@ -1,7 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Oct 29 08:16:32 2021
 
+@author: xroynard
+"""
 
 #backend = "tensorflow"
 backend = "torch"
+#backend = "jax"
 
 if backend == "tensorflow":
     import tensorflow as tf
@@ -12,6 +19,9 @@ if backend == "tensorflow":
     float32 = tf.float32
 
     # functions
+    def build_sparse_tensor(indices, values, shape):
+        return tf.sparse.SparseTensor(indices, values, shape)
+
     matmul = tf.sparse.sparse_dense_matmul
     reshape = tf.reshape
 
@@ -31,9 +41,12 @@ elif backend == "torch":
     SparseTensor = torch.sparse.Tensor # TODO: make a class for SparseTensor ?
     float32 = torch.float32
     
-    sparse_coo_tensor = torch.sparse_coo_tensor
-
     # functions
+    def build_sparse_tensor(indices, values, shape):
+        indices = torch.from_numpy(np.array(indices).T)
+        values = torch.from_numpy(np.array(values))
+        return torch.sparse_coo_tensor(indices, values, shape)
+
     matmul = torch.matmul
     reshape = torch.reshape
 
@@ -60,6 +73,8 @@ elif backend == "torch":
             return x.to(dtype=dtype)
 
     def expand_dims(x, axis):
+        if isinstance(x, np.ndarray):
+            return expand_dims(torch.from_numpy(x), axis)
         return torch.unsqueeze(x, dim=axis)
 
     def clip_by_value(x, clip_value_min, clip_value_max):
@@ -67,3 +82,10 @@ elif backend == "torch":
 
     def concat(x, axis):
         return torch.cat(x, dim=axis)
+
+elif backend == "jax":
+    # not yet
+    raise NotImplementedError
+
+else:
+    raise NotImplementedError
