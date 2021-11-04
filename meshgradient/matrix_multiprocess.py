@@ -12,7 +12,7 @@ import progressbar
 import meshio
 
 # PyTorch or Tensorflow
-from .backend import SparseTensor, cast, float32
+from .backend import SparseTensor, cast, float32, build_sparse_tensor
 
 from .utils import get_cycle, get_area_from_points, get_triangles
 
@@ -61,8 +61,10 @@ def build_CON_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     results = np.array(results)
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
-    Sp_backend_CON_matrix: SparseTensor = SparseTensor(
-        backend_indices, cast(backend_values, dtype=float32), backend_shape
+
+    backend_values = cast(backend_values, dtype=float32)
+    Sp_backend_CON_matrix: SparseTensor = build_sparse_tensor(
+        backend_indices, backend_values, backend_shape
     )
 
     return Sp_backend_CON_matrix
@@ -132,8 +134,9 @@ def build_PCE_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
     
-    Sp_backend_PCE_matrix: SparseTensor = SparseTensor(
-        backend_indices, cast(backend_values, dtype=float32), backend_shape
+    backend_values = cast(backend_values, dtype=float32)
+    Sp_backend_PCE_matrix: SparseTensor = build_sparse_tensor(
+        backend_indices, backend_values, backend_shape
     )
 
     return Sp_backend_PCE_matrix
@@ -216,8 +219,9 @@ def build_AGS_matrix_multiprocess(mesh: meshio.Mesh) -> SparseTensor:
     backend_indices = results[:,0][0]
     backend_values = results[:,1][0]
 
-    Sp_backend_AGS_matrix: SparseTensor = SparseTensor(
-        backend_indices, cast(backend_values, dtype=float32), backend_shape
+    backend_values = cast(backend_values, dtype=float32)
+    Sp_backend_AGS_matrix: SparseTensor = build_sparse_tensor(
+        backend_indices, backend_values, backend_shape
     )
 
     return Sp_backend_AGS_matrix

@@ -28,7 +28,7 @@ We used numpy and PyTorch (TensorFlow in the [original repo](https://github.com/
 
 We also developed a multiprocessing version of our functions based on the library Ray. This gives full support to tailored computing power even on large clusters.
 
-You can install a working conda env:
+You can install a working conda environment:
 ```
 conda env create -f conda_env.yaml
 ```

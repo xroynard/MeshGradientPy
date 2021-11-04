@@ -7,7 +7,7 @@ from typing import Dict, Tuple, Optional, List, Any, Union
 import numpy as np
 
 # PyTorch or Tensorflow
-from .backend import Tensor, SparseTensor, matmul, multiply, reshape, repeat, cast, float32
+from .backend import Tensor, SparseTensor, matmul, multiply, reshape, repeat, cast, expand_dims, clip_by_value, concat, float32
 
 def compute_div_from_grad(
     grad: Union[Tensor, np.ndarray]

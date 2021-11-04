@@ -9,7 +9,7 @@ import progressbar
 import meshio
 
 # PyTorch or Tensorflow
-from .backend import SparseTensor, cast, float32, sparse_coo_tensor
+from .backend import SparseTensor, cast, float32, build_sparse_tensor
 
 from .utils import get_cycle, get_area_from_points, get_triangles
 
@@ -49,14 +49,8 @@ def build_CON_matrix(mesh: meshio.Mesh) -> SparseTensor:
             backend_indices.append([indx_point, indx_triangle])
             backend_values.append(areas[i] / total_area)
 
-    print("backend_indices :",backend_indices)
-    print("backend_values  :",backend_values)
-    print("backend_shape   :",backend_shape)
-    test_sparse = sparse_coo_tensor(backend_indices, backend_values, backend_shape)
-    print(test_sparse)
-
     backend_values = cast(backend_values, dtype=float32)
-    Sp_backend_CON_matrix: SparseTensor = SparseTensor(
+    Sp_backend_CON_matrix: SparseTensor = build_sparse_tensor(
         backend_indices, backend_values, backend_shape
     )
 
@@ -117,8 +111,9 @@ def build_PCE_matrix(mesh: meshio.Mesh) -> SparseTensor:
                 backend_indices.append([i * 3 + k, curr])
                 backend_values.append(vert_contr[k])
 
-    Sp_backend_PCE_matrix: SparseTensor = SparseTensor(
-        backend_indices, cast(backend_values, dtype=float32), backend_shape
+    backend_values = cast(backend_values, dtype=float32)
+    Sp_backend_PCE_matrix: SparseTensor = build_sparse_tensor(
+        backend_indices, backend_values, backend_shape
     )
 
     return Sp_backend_PCE_matrix
@@ -194,8 +189,9 @@ def build_AGS_matrix(mesh: meshio.Mesh) -> SparseTensor:
                     backend_indices.append([indx_node * 3 + i, col])
                     backend_values.append(value[i] / area)
 
-    Sp_backend_AGS_matrix: SparseTensor = SparseTensor(
-        backend_indices, cast(backend_values, dtype=float32), backend_shape
+    backend_values = cast(backend_values, dtype=float32)
+    Sp_backend_AGS_matrix: SparseTensor = build_sparse_tensor(
+        backend_indices, backend_values, backend_shape
     )
 
     return Sp_backend_AGS_matrix
