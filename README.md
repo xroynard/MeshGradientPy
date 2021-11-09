@@ -66,27 +66,33 @@ These three methods were built for triangle cells. Any other sort of cells won't
 
 ### 4.1. PCE 
 
-This method estimates a constant gradient inside each cell. First, we define a linear interpolation at any point $p$ in a cell of a function $f$ with: 
+This method estimates a constant gradient inside each cell. First, we define a linear interpolation at any point <!-- $p$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=p"> in a cell of a function <!-- $f$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=f"> with: 
 
-$$
+<!-- $$
 f_\sigma(p) = \sum_{v_i \in \sigma} \lambda_i f_i
-$$
+$$ --> 
 
-where $v_i$ are the vertices of the cell and $\lambda_i$ the barycentric coordinates of $p$ wrt. the vertices. 
+<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=f_%5Csigma(p)%20%3D%20%5Csum_%7Bv_i%20%5Cin%20%5Csigma%7D%20%5Clambda_i%20f_i"></div>
 
-With this estimation, for a triangle with 3 vertices $v_i$, $v_j$ and $v_k$, we have:
+where <!-- $v_i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=v_i"> are the vertices of the cell and <!-- $\lambda_i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=%5Clambda_i"> the barycentric coordinates of <!-- $p$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=p"> wrt. the vertices. 
 
-$$
+With this estimation, for a triangle with 3 vertices <!-- $v_i$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=v_i">, <!-- $v_j$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=v_j"> and <!-- $v_k$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=v_k">, we have:
+
+<!-- $$
 \nabla f_t = (f_j - f_i) \frac{(v_i - v_k)^\bot}{2A} + (f_k - f_i) \frac{(v_j - v_i)^\bot}{2A}
-$$
+$$ --> 
+
+<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=%5Cnabla%20f_t%20%3D%20(f_j%20-%20f_i)%20%5Cfrac%7B(v_i%20-%20v_k)%5E%5Cbot%7D%7B2A%7D%20%2B%20(f_k%20-%20f_i)%20%5Cfrac%7B(v_j%20-%20v_i)%5E%5Cbot%7D%7B2A%7D"></div>
 
 
-where $A$ is the area of the triangle.
+where <!-- $A$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=A"> is the area of the triangle.
 
 ### 4.2. AGS
 
-Given a node, we can use the PCE method to compute a gradient in each cell $\sigma$ containing the node $v$, thus having:
+Given a node, we can use the PCE method to compute a gradient in each cell <!-- $\sigma$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=%5Csigma"> containing the node <!-- $v$ --> <img style="transform: translateY(0.1em); background: white;" src="https://render.githubusercontent.com/render/math?math=v">, thus having:
 
-$$
+<!-- $$
 \nabla f_v = \frac{1}{\sum_{\sigma \in \mathcal{N}(v)} A_\sigma} \sum_{\sigma \in \mathcal{N}(v)} A_\sigma \nabla f_\sigma
-$$
+$$ --> 
+
+<div align="center"><img style="background: white;" src="https://render.githubusercontent.com/render/math?math=%5Cnabla%20f_v%20%3D%20%5Cfrac%7B1%7D%7B%5Csum_%7B%5Csigma%20%5Cin%20%5Cmathcal%7BN%7D(v)%7D%20A_%5Csigma%7D%20%5Csum_%7B%5Csigma%20%5Cin%20%5Cmathcal%7BN%7D(v)%7D%20A_%5Csigma%20%5Cnabla%20f_%5Csigma"></div>
