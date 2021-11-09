@@ -1,4 +1,4 @@
-name: myenv
+name: mesh_grad
 
 channels:
   - pytorch
@@ -13,6 +13,7 @@ dependencies:
   - scikit-image
   - matplotlib
   - scipy
+  - psutil
   - meshio
   - pyvista
   - progressbar
@@ -20,3 +21,5 @@ dependencies:
   - ipyvtklink
   - jupyterlab
   - notebook
+  - pip:
+     - ray
